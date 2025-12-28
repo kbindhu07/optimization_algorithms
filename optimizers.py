@@ -1,79 +1,116 @@
 import numpy as np
 
-class Optimizer:
-    def step(self, params, grads):
-        raise NotImplementedError
+def loss_fn(x, y):
+    return x**2 + y**2
+
+def grad_fn(x, y):
+    return 2*x, 2*y
 
 
-class SGD(Optimizer):
-    def __init__(self, lr=0.01):
-        self.lr = lr
+def sgd(lr=0.1, steps=50):
+    x, y = 10.0, 10.0
+    losses, path = [], []
 
-    def step(self, params, grads):
-        return params - self.lr * grads
+    for _ in range(steps):
+        gx, gy = grad_fn(x, y)
+        x -= lr * gx
+        y -= lr * gy
+        losses.append(loss_fn(x, y))
+        path.append((x, y))
 
-
-class Momentum(Optimizer):
-    def __init__(self, lr=0.01, beta=0.9):
-        self.lr = lr
-        self.beta = beta
-        self.v = np.zeros(2)
-
-    def step(self, params, grads):
-        self.v = self.beta * self.v + grads
-        return params - self.lr * self.v
+    return losses, path
 
 
-class Nesterov(Optimizer):
-    def __init__(self, lr=0.01, beta=0.9):
-        self.lr = lr
-        self.beta = beta
-        self.v = np.zeros(2)
+def momentum(lr=0.1, beta=0.9, steps=50):
+    x, y = 10.0, 10.0
+    vx, vy = 0.0, 0.0
+    losses, path = [], []
 
-    def step(self, params, grads):
-        self.v = self.beta * self.v + grads
-        return params - self.lr * (self.beta * self.v + grads)
+    for _ in range(steps):
+        gx, gy = grad_fn(x, y)
+        vx = beta * vx + lr * gx
+        vy = beta * vy + lr * gy
+        x -= vx
+        y -= vy
+        losses.append(loss_fn(x, y))
+        path.append((x, y))
 
-
-class AdaGrad(Optimizer):
-    def __init__(self, lr=0.1, eps=1e-8):
-        self.lr = lr
-        self.eps = eps
-        self.h = np.zeros(2)
-
-    def step(self, params, grads):
-        self.h += grads ** 2
-        return params - self.lr * grads / (np.sqrt(self.h) + self.eps)
+    return losses, path
 
 
-class RMSProp(Optimizer):
-    def __init__(self, lr=0.01, beta=0.9, eps=1e-8):
-        self.lr = lr
-        self.beta = beta
-        self.eps = eps
-        self.h = np.zeros(2)
+def nesterov(lr=0.1, beta=0.9, steps=50):
+    x, y = 10.0, 10.0
+    vx, vy = 0.0, 0.0
+    losses, path = [], []
 
-    def step(self, params, grads):
-        self.h = self.beta * self.h + (1 - self.beta) * grads ** 2
-        return params - self.lr * grads / (np.sqrt(self.h) + self.eps)
+    for _ in range(steps):
+        gx, gy = grad_fn(x - beta*vx, y - beta*vy)
+        vx = beta * vx + lr * gx
+        vy = beta * vy + lr * gy
+        x -= vx
+        y -= vy
+        losses.append(loss_fn(x, y))
+        path.append((x, y))
+
+    return losses, path
 
 
-class Adam(Optimizer):
-    def __init__(self, lr=0.01, beta1=0.9, beta2=0.999, eps=1e-8):
-        self.lr = lr
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.eps = eps
-        self.m = np.zeros(2)
-        self.v = np.zeros(2)
-        self.t = 0
+def adagrad(lr=1.0, eps=1e-8, steps=50):
+    x, y = 10.0, 10.0
+    hx, hy = 0.0, 0.0
+    losses, path = [], []
 
-    def step(self, params, grads):
-        self.t += 1
-        self.m = self.beta1 * self.m + (1 - self.beta1) * grads
-        self.v = self.beta2 * self.v + (1 - self.beta2) * (grads ** 2)
+    for _ in range(steps):
+        gx, gy = grad_fn(x, y)
+        hx += gx**2
+        hy += gy**2
+        x -= lr * gx / (np.sqrt(hx) + eps)
+        y -= lr * gy / (np.sqrt(hy) + eps)
+        losses.append(loss_fn(x, y))
+        path.append((x, y))
 
-        m_hat = self.m / (1 - self.beta1 ** self.t)
-        v_hat = self.v / (1 - self.beta2 ** self.t)
+    return losses, path
 
-        return params - self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
+
+def rmsprop(lr=0.1, beta=0.9, eps=1e-8, steps=50):
+    x, y = 10.0, 10.0
+    hx, hy = 0.0, 0.0
+    losses, path = [], []
+
+    for _ in range(steps):
+        gx, gy = grad_fn(x, y)
+        hx = beta * hx + (1-beta) * gx**2
+        hy = beta * hy + (1-beta) * gy**2
+        x -= lr * gx / (np.sqrt(hx) + eps)
+        y -= lr * gy / (np.sqrt(hy) + eps)
+        losses.append(loss_fn(x, y))
+        path.append((x, y))
+
+    return losses, path
+
+
+def adam(lr=0.1, b1=0.9, b2=0.999, eps=1e-8, steps=50):
+    x, y = 10.0, 10.0
+    mx = my = vx = vy = 0.0
+    losses, path = [], []
+
+    for t in range(1, steps+1):
+        gx, gy = grad_fn(x, y)
+
+        mx = b1*mx + (1-b1)*gx
+        my = b1*my + (1-b1)*gy
+        vx = b2*vx + (1-b2)*gx**2
+        vy = b2*vy + (1-b2)*gy**2
+
+        mx_hat = mx / (1-b1**t)
+        my_hat = my / (1-b1**t)
+        vx_hat = vx / (1-b2**t)
+        vy_hat = vy / (1-b2**t)
+
+        x -= lr * mx_hat / (np.sqrt(vx_hat) + eps)
+        y -= lr * my_hat / (np.sqrt(vy_hat) + eps)
+
+        losses.append(loss_fn(x, y))
+        path.append((x, y))
+
+    return losses, path

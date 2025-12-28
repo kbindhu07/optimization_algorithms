@@ -1,75 +1,56 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from optimizers import SGD, Momentum, Nesterov, AdaGrad, RMSProp, Adam
+from optimizers import sgd, momentum, nesterov, adagrad, rmsprop, adam
 
-a, b = 1.0, 10.0
-
-def loss(params):
-    x, y = params
-    return a * x**2 + b * y**2
-
-def gradient(params):
-    x, y = params
-    return np.array([2 * a * x, 2 * b * y])
-
-optimizers = {
-    "SGD": SGD(lr=0.05),
-    "Momentum": Momentum(lr=0.05),
-    "Nesterov": Nesterov(lr=0.05),
-    "AdaGrad": AdaGrad(lr=0.5),
-    "RMSProp": RMSProp(lr=0.05),
-    "Adam": Adam(lr=0.05)
+# -----------------------------
+# Run optimizers
+# -----------------------------
+results = {
+    "SGD": sgd(),
+    "Momentum": momentum(),
+    "Nesterov": nesterov(),
+    "AdaGrad": adagrad(),
+    "RMSProp": rmsprop(),
+    "Adam": adam()
 }
 
-iterations = 100
-start_point = np.array([5.0, 5.0])
+# -----------------------------
+# 1️⃣ Convergence Plot
+# -----------------------------
+plt.figure(figsize=(8, 6))
 
-history = {}
-paths = {}
-
-for name, optimizer in optimizers.items():
-    params = start_point.copy()
-    losses = []
-    path_x, path_y = [], []
-
-    for _ in range(iterations):
-        path_x.append(params[0])
-        path_y.append(params[1])
-
-        grads = gradient(params)
-        params = optimizer.step(params, grads)
-        losses.append(loss(params))
-
-    history[name] = losses
-    paths[name] = (path_x, path_y)
-
-    print(f"{name} final params: {params}")
-
-plt.figure(figsize=(10, 6))
-for name, losses in history.items():
+for name, (losses, _) in results.items():
     plt.plot(losses, label=name)
 
 plt.xlabel("Iterations")
 plt.ylabel("Loss")
-plt.title("Convergence Comparison of Optimization Algorithms")
+plt.title("Convergence Plot of Optimizers")
 plt.legend()
 plt.grid(True)
 
-x = np.linspace(-6, 6, 200)
-y = np.linspace(-6, 6, 200)
+plt.savefig("convergence_plot.png", dpi=300, bbox_inches="tight")
+plt.show()
+
+# -----------------------------
+# 2️⃣ Contour Plot
+# -----------------------------
+x = np.linspace(-11, 11, 400)
+y = np.linspace(-11, 11, 400)
 X, Y = np.meshgrid(x, y)
-Z = a * X**2 + b * Y**2
+Z = X**2 + Y**2
 
 plt.figure(figsize=(8, 6))
 plt.contour(X, Y, Z, levels=30)
+plt.title("Contour Plot with Optimizer Paths")
 
-for name, (px, py) in paths.items():
-    plt.plot(px, py, marker='o', markersize=2, label=name)
+for name, (_, path) in results.items():
+    path = np.array(path)
+    plt.plot(path[:, 0], path[:, 1], marker='o', label=name)
 
 plt.xlabel("x")
 plt.ylabel("y")
-plt.title("Optimization Paths on Loss Contour")
 plt.legend()
 plt.grid(True)
 
+plt.savefig("contour_plot.png", dpi=300, bbox_inches="tight")
 plt.show()
