@@ -2,9 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from optimizers import sgd, momentum, nesterov, adagrad, rmsprop, adam
 
-# -----------------------------
-# Run optimizers
-# -----------------------------
+
 results = {
     "SGD": sgd(),
     "Momentum": momentum(),
@@ -14,9 +12,7 @@ results = {
     "Adam": adam()
 }
 
-# -----------------------------
-# 1️⃣ Convergence Plot
-# -----------------------------
+
 plt.figure(figsize=(8, 6))
 
 for name, (losses, _) in results.items():
@@ -31,9 +27,7 @@ plt.grid(True)
 plt.savefig("convergence_plot.png", dpi=300, bbox_inches="tight")
 plt.show()
 
-# -----------------------------
-# 2️⃣ Contour Plot
-# -----------------------------
+
 x = np.linspace(-11, 11, 400)
 y = np.linspace(-11, 11, 400)
 X, Y = np.meshgrid(x, y)
